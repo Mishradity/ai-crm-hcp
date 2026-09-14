@@ -32,3 +32,20 @@ python -m venv venv
 source venv/bin/activate
 
 pip install -r requirements.txt
+-------------------------------
+## Add grok API key
+
+  GROQ_API_KEY=your_groq_api_key
+  DATABASE_URL=sqlite:///./crm.db
+
+
+
+uvicorn app.main:app --reload --port 8000
+
+
+
+
+cd frontend
+npm install
+npm run dev
+
