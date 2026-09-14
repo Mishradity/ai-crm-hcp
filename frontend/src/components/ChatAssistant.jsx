@@ -15,9 +15,21 @@ export default function ChatAssistant() {
 
   const quickPrompts = [
     "Met Sarah (CTO at FinTech), demoed multi-tenant API, positive sentiment, requested sandbox keys",
-    "Check available API sandbox credits for enterprise pilot",
-    "Show recent logs for Sarah Connor"
+    "Met Marcus (VP of Infrastructure), call went poorly. Failed latency SLA and SOC-2 compliance concerns. Deal at risk, negative sentiment.",
+    "Call with Elena (Head of Security). Reviewing data privacy and compliance specs, neutral sentiment."
   ];
+
+  // Helper function to detect sentiment client-side as well
+  const inferSentiment = (text) => {
+    const lower = text.toLowerCase();
+    if (lower.includes('negative') || lower.includes('poorly') || lower.includes('failed') || lower.includes('risk') || lower.includes('blocker') || lower.includes('unhappy') || lower.includes('freeze')) {
+      return 'Negative';
+    }
+    if (lower.includes('neutral') || lower.includes('evaluating') || lower.includes('reviewing') || lower.includes('pending')) {
+      return 'Neutral';
+    }
+    return 'Positive';
+  };
 
   const handleSend = async (overrideText = null) => {
     const textToSend = overrideText || inputText;
@@ -26,6 +38,8 @@ export default function ChatAssistant() {
     dispatch(addChatMessage({ sender: 'user', text: textToSend }));
     if (!overrideText) setInputText('');
     setLoading(true);
+
+    const clientSideSentiment = inferSentiment(textToSend);
 
     try {
       const res = await fetch('https://ai-crm-hcp-8qem.onrender.com/api/chat', {
@@ -37,16 +51,34 @@ export default function ChatAssistant() {
       dispatch(addChatMessage({ sender: 'assistant', text: data.reply }));
 
       if (data.extracted_data) {
+        const backendSentiment = data.extracted_data.sentiment;
+        // Prioritize exact detected sentiment over default
+        const finalSentiment = (backendSentiment && backendSentiment !== 'Positive') 
+          ? backendSentiment 
+          : clientSideSentiment;
+
+        let dynamicOutcomes = data.extracted_data.outcomes;
+        let dynamicFollowUp = data.extracted_data.follow_up_actions;
+
+        if (finalSentiment === 'Negative') {
+          dynamicOutcomes = dynamicOutcomes && !dynamicOutcomes.includes('trial') 
+            ? dynamicOutcomes 
+            : 'Technical / SLA blockers raised. Escalated to solutions architecture team.';
+          dynamicFollowUp = dynamicFollowUp && !dynamicFollowUp.includes('Dispatch API')
+            ? dynamicFollowUp
+            : 'Schedule critical remediation call; review latency SLA parameters.';
+        }
+
         dispatch(setFullFormData({
-          hcpName: data.extracted_data.hcp_name || 'Sarah Connor (CTO)',
+          hcpName: data.extracted_data.hcp_name || 'Enterprise Lead',
           interactionType: data.extracted_data.interaction_type || 'Meeting',
           date: data.extracted_data.date || new Date().toISOString().split('T')[0],
           time: data.extracted_data.time || '15:00',
-          attendees: data.extracted_data.attendees || 'Lead Architect, Head of DevOps',
+          attendees: data.extracted_data.attendees || 'Engineering & Architecture Team',
           topicsDiscussed: data.extracted_data.topics_discussed || textToSend,
-          sentiment: data.extracted_data.sentiment || 'Positive',
-          outcomes: data.extracted_data.outcomes || 'Agreed to initiate 14-day cloud pilot',
-          followUpActions: data.extracted_data.follow_up_actions || 'Dispatch API credentials & MSA document',
+          sentiment: finalSentiment,
+          outcomes: dynamicOutcomes,
+          followUpActions: dynamicFollowUp,
         }));
       }
     } catch (err) {
