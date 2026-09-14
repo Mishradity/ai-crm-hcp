@@ -1,0 +1,25 @@
+# Node dependencies (MUST IGNORE)
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+frontend/dist/
+
+# Python virtual environment (MUST IGNORE)
+venv/
+backend/venv/
+__pycache__/
+backend/**/__pycache__/
+*.py[cod]
+
+# Local database & environment variables
+*.db
+backend/crm.db
+.env
+backend/.env
+
+# System files
+.DS_Store
+Thumbs.db
