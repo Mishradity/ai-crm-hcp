@@ -17,7 +17,7 @@ export default function InteractionForm() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch('http://localhost:8000/api/interactions', {
+      const res = await fetch('https://ai-crm-hcp-8qem.onrender.com/api/interactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
