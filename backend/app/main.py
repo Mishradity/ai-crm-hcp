@@ -31,12 +31,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={
             "reply": "Sync recorded via fallback copilot.",
             "extracted_data": {
-                "hcp_name": "David (CTO)",
+                "hcp_name": "Enterprise Stakeholder",
                 "interaction_type": "Meeting",
-                "topics_discussed": "Data residency & technical SLA reviews",
-                "sentiment": "Negative",
-                "outcomes": "Technical blockers raised. Deal paused pending security review.",
-                "follow_up_actions": "Schedule urgent architecture and compliance remediation call."
+                "topics_discussed": "Technical architecture & sync notes",
+                "sentiment": "Positive",
+                "outcomes": "Notes logged and reviewed",
+                "follow_up_actions": "Schedule follow up sync"
             }
         }
     )
@@ -99,7 +99,7 @@ def extract_name(text: str) -> str:
     m = re.search(r"(?:with|met|called|to)\s+([A-Z][a-zA-Z]+(?:\s+\([^)]+\))?)", text, re.IGNORECASE)
     if m:
         return m.group(1).strip()
-    return "David (CTO)"
+    return "Enterprise Stakeholder"
 
 @app.get("/")
 def root():
@@ -109,11 +109,15 @@ def root():
 def chat_endpoint(payload: ChatRequest):
     msg = payload.message.lower()
     
-    # 1. Dynamic Sentiment Inference
-    if any(k in msg for k in ["negative", "poorly", "failed", "unhappy", "blocker", "risk", "freeze", "dissatisfied"]):
+    # 1. Smarter Keyword Matching (Positive / Zero Blockers checked first)
+    if "positive" in msg or "zero blockers" in msg or "passed" in msg or "champion" in msg or "agreed" in msg:
+        sentiment = "Positive"
+        outcomes = "Client confirmed high interest and validated technical architecture."
+        follow_up = "Dispatch Master Services Agreement (MSA) and issue production keys."
+    elif any(k in msg for k in ["negative", "poorly", "failed", "unhappy", "freeze", "dissatisfied", "critical blocker"]):
         sentiment = "Negative"
         outcomes = "Technical / SLA blockers identified. Deal put on hold pending compliance."
-        follow_up = "Schedule urgent architecture review; address data residency objections."
+        follow_up = "Schedule urgent architecture review; address SLA and security objections."
     elif any(k in msg for k in ["neutral", "evaluating", "reviewing", "pending"]):
         sentiment = "Neutral"
         outcomes = "Specifications and pilot parameters under active review."
@@ -141,7 +145,7 @@ def chat_endpoint(payload: ChatRequest):
     saved_data = save_interaction_to_db(data)
 
     return {
-        "reply": f"Engagement logged for {client_name}. Sentiment flagged as '{sentiment}'. Technical blockers & outcomes synced to pipeline.",
+        "reply": f"Engagement logged for {client_name}. Sentiment flagged as '{sentiment}'. Details synced to pipeline.",
         "extracted_data": saved_data
     }
 
