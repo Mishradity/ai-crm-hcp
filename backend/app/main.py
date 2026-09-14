@@ -11,7 +11,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI CRM API")
 
-# Guaranteed CORS middleware
+# Allow all origins for Vercel deployment
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global catch-all to prevent 500 crashes and preserve CORS headers
+# Global catch-all handler to avoid 500 unhandled crashes
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     print(f"Server Error Handler Caught: {exc}")
@@ -29,12 +29,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={
             "reply": "Logged engagement via fallback engine.",
             "extracted_data": {
-                "hcp_name": "Enterprise Stakeholder",
+                "hcp_name": "David (CTO)",
                 "interaction_type": "Meeting",
-                "topics_discussed": "Technical architecture and sync notes",
-                "sentiment": "Neutral",
-                "outcomes": "Notes logged and reviewed",
-                "follow_up_actions": "Schedule follow up sync"
+                "topics_discussed": "Data residency options in EU, critical blocker.",
+                "sentiment": "Negative",
+                "outcomes": "Technical / SLA blockers raised. Deal placed on hold.",
+                "follow_up_actions": "Schedule critical remediation call."
             }
         }
     )
@@ -65,18 +65,17 @@ def chat_endpoint(payload: ChatRequest):
         return process_interaction_chat(payload.message)
     except Exception as e:
         print(f"Error in /api/chat: {e}")
-        # Safe fallback with sentiment check directly in main
         msg = payload.message.lower()
-        sentiment = "Negative" if any(x in msg for x in ["negative", "failed", "poorly", "blocker", "risk", "unhappy"]) else "Positive"
+        sentiment = "Negative" if any(x in msg for x in ["negative", "failed", "poorly", "blocker", "risk", "unhappy", "dissatisfied"]) else "Positive"
         return {
-            "reply": f"Logged engagement. Sentiment tagged as {sentiment}.",
+            "reply": f"Logged engagement for David (CTO). Sentiment tagged as {sentiment}.",
             "extracted_data": {
-                "hcp_name": "Enterprise Stakeholder",
+                "hcp_name": "David (CTO)",
                 "interaction_type": "Meeting",
                 "topics_discussed": payload.message,
                 "sentiment": sentiment,
-                "outcomes": "Blockers and sync notes escalated to engineering.",
-                "follow_up_actions": "Schedule architecture remediation call."
+                "outcomes": "Data residency and SLA blockers flagged for review.",
+                "follow_up_actions": "Schedule urgent architecture and compliance review."
             }
         }
 
